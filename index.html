@@ -1,113 +1,85 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mapa de Lesões - PMRV</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        body { font-family: sans-serif; text-align: center; background-color: #f0f2f5; margin: 0; padding: 10px; }
-        #human-body { width: 100%; max-width: 280px; height: auto; margin: 10px auto; }
-        .membro { fill: #d1d1d1; stroke: #fff; stroke-width: 2; cursor: pointer; }
-        .selecionado { fill: #ff4d4d !important; }
-        
-        .card { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 15px; }
-        select { width: 100%; padding: 10px; margin-top: 10px; border-radius: 5px; border: 1px solid #ccc; display: none; }
-        
-        #lista-resumo { text-align: left; font-size: 14px; color: #555; margin: 15px 0; }
-        .item-lesao { background: #ffe6e6; padding: 5px 10px; border-radius: 5px; margin-bottom: 5px; border-left: 4px solid #ff4d4d; }
-        
-        button { background: #0088cc; color: white; border: none; padding: 15px; border-radius: 8px; width: 100%; font-weight: bold; cursor: pointer; }
-    </style>
-</head>
-<body>
-
-<div class="card">
-    <h3>Local e Tipo da Lesão</h3>
-    <p style="font-size: 12px; color: #666;">Clique na parte do corpo e selecione o tipo:</p>
-    
-    <svg id="human-body" viewBox="0 0 200 500">
-        <circle id="Cabeça" class="membro" cx="100" cy="40" r="30" />
-        <rect id="Tronco" class="membro" x="60" y="80" width="80" height="150" rx="10" />
-        <rect id="Braço_Esquerdo" class="membro" x="20" y="85" width="30" height="130" rx="15" />
-        <rect id="Braço_Direito" class="membro" x="150" y="85" width="30" height="130" rx="15" />
-        <rect id="Perna_Esquerda" class="membro" x="65" y="240" width="30" height="160" rx="15" />
-        <rect id="Perna_Direita" class="membro" x="105" y="240" width="30" height="160" rx="15" />
-    </svg>
-
-    <select id="tipo-lesao">
-        <option value="">-- Selecione o tipo de lesão --</option>
-        <option value="Escoriação">Escoriação</option>
-        <option value="Fratura Exposta">Fratura Exposta</option>
-        <option value="Fratura Suspeita">Fratura Suspeita</option>
-        <option value="Corte/Laceração">Corte/Laceração</option>
-        <option value="Contusão">Contusão</option>
-        <option value="Queimadura">Queimadura</option>
-        <option value="Dor Local">Apenas Dor</option>
-    </select>
-</div>
-
-<div class="card">
-    <strong>Resumo do Relatório:</strong>
-    <div id="lista-resumo">Nenhuma lesão marcada.</div>
-    <button onclick="enviarParaBot()">FINALIZAR RELATÓRIO</button>
-</div>
-
 <script>
-    const tg = window.Telegram.WebApp;
-    tg.expand();
+const tg = window.Telegram.WebApp;
+tg.expand();
 
-    let membroAtual = null;
-    const lesoes = {}; // Armazena { "Cabeça": "Escoriação" }
+let membroAtual = null;
+const lesoes = {}; // { "Cabeça": "Escoriação" }
 
-    const menuTipo = document.getElementById('tipo-lesao');
-    const resumoDiv = document.getElementById('lista-resumo');
+const menuTipo = document.getElementById('tipo-lesao');
+const resumoDiv = document.getElementById('lista-resumo');
+const textoRelato = document.getElementById('texto-relato');
 
-    // Clique no mapa
-    document.querySelectorAll('.membro').forEach(el => {
-        el.addEventListener('click', () => {
-            membroAtual = el.id.replace('_', ' ');
-            menuTipo.style.display = 'block';
-            menuTipo.focus();
-            // Destaca visualmente qual estamos editando
-            document.querySelectorAll('.membro').forEach(m => m.style.stroke = '#fff');
-            el.style.stroke = '#0088cc';
-        });
+// Clique no mapa
+document.querySelectorAll('.membro').forEach(el => {
+    el.addEventListener('click', () => {
+        membroAtual = el.id.replace('_', ' ');
+        menuTipo.style.display = 'block';
+        menuTipo.focus();
+        document.querySelectorAll('.membro').forEach(m => m.style.stroke = '#fff');
+        el.style.stroke = '#0088cc';
     });
+});
 
-    // Quando seleciona o tipo no menu
-    menuTipo.addEventListener('change', () => {
-        if (menuTipo.value !== "" && membroAtual) {
-            lesoes[membroAtual] = menuTipo.value;
-            document.getElementById(membroAtual.replace(' ', '_')).classList.add('selecionado');
-            atualizarResumo();
-            menuTipo.value = "";
-            menuTipo.style.display = 'none';
+// Seleciona tipo da lesão
+menuTipo.addEventListener('change', () => {
+    if (menuTipo.value !== "" && membroAtual) {
+        lesoes[membroAtual] = menuTipo.value;
+        document.getElementById(membroAtual.replace(' ', '_')).classList.add('selecionado');
+        atualizarResumo();
+        gerarTextoRelato();
+        menuTipo.value = "";
+        menuTipo.style.display = 'none';
+    }
+});
+
+function atualizarResumo() {
+    resumoDiv.innerHTML = "";
+    for (const [local, tipo] of Object.entries(lesoes)) {
+        resumoDiv.innerHTML += `<div class="item-lesao"><b>${local}:</b> ${tipo}</div>`;
+    }
+}
+
+// 🔹 AQUI É O MAIS IMPORTANTE 🔹
+function gerarTextoRelato() {
+    let texto = "";
+
+    for (const [local, tipo] of Object.entries(lesoes)) {
+
+        if (tipo === "Escoriação") {
+            texto += `Foi possível observar que a vítima apresentava escoriações aparentes na região ${local.toLowerCase()}. `;
         }
-    });
-
-    function atualizarResumo() {
-        resumoDiv.innerHTML = "";
-        for (const [local, tipo] of Object.entries(lesoes)) {
-            resumoDiv.innerHTML += `<div class="item-lesao"><b>${local}:</b> ${tipo}</div>`;
+        else if (tipo === "Corte/Laceração") {
+            texto += `Foi possível observar lesão aparente na região ${local.toLowerCase()}, compatível com corte. `;
+        }
+        else if (tipo === "Contusão") {
+            texto += `Foi possível observar lesão aparente na região ${local.toLowerCase()}. `;
+        }
+        else if (tipo === "Queimadura") {
+            texto += `Foi possível observar lesão aparente na região ${local.toLowerCase()}, conforme constatado no local. `;
+        }
+        else if (tipo === "Dor Local") {
+            texto += `A vítima relatava sentir dores na região ${local.toLowerCase()}. `;
+        }
+        else if (tipo.includes("Fratura")) {
+            texto += `A vítima relatava fortes dores na região ${local.toLowerCase()}, não sendo possível precisar a gravidade da lesão. `;
         }
     }
 
-    function enviarParaBot() {
-        const total = Object.keys(lesoes).length;
-        if (total === 0) {
-            alert("Por favor, marque ao menos uma lesão.");
-            return;
-        }
+    textoRelato.value = texto.trim();
+}
 
-        let textoFinal = "Relatório de Lesões:\n";
-        for (const [local, tipo] of Object.entries(lesoes)) {
-            textoFinal += `- ${local}: ${tipo}\n`;
-        }
+function copiarRelato() {
+    textoRelato.select();
+    document.execCommand('copy');
+    alert("Texto copiado para o relato policial.");
+}
 
-        tg.sendData(textoFinal);
+function enviarParaBot() {
+    if (Object.keys(lesoes).length === 0) {
+        alert("Por favor, marque ao menos uma lesão.");
+        return;
     }
+
+    tg.sendData(textoRelato.value);
+}
 </script>
-
-</body>
-</html>
