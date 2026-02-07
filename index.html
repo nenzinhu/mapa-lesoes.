@@ -3,75 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mapa de Lesões - SINISTRO-PMRV198</title>
+    <title>Mapa de Lesões - PMRV</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; background-color: #f4f4f4; color: #333; }
-        .container { padding: 20px; }
-        #human-body { width: 100%; max-width: 300px; height: auto; margin: 20px auto; }
-        .membro { fill: #cccccc; stroke: #ffffff; stroke-width: 2; cursor: pointer; transition: 0.3s; }
-        .membro:hover { fill: #999999; }
-        .selecionado { fill: #ff4d4d !important; } /* Cor de destaque para lesão */
+        body { font-family: sans-serif; text-align: center; background-color: #f0f2f5; margin: 0; padding: 10px; }
+        #human-body { width: 100%; max-width: 280px; height: auto; margin: 10px auto; }
+        .membro { fill: #d1d1d1; stroke: #fff; stroke-width: 2; cursor: pointer; }
+        .selecionado { fill: #ff4d4d !important; }
         
-        #lista-lesoes { margin: 20px; text-align: left; background: white; padding: 10px; border-radius: 8px; min-height: 50px; }
-        button { 
-            background-color: #0088cc; color: white; border: none; padding: 15px 30px; 
-            border-radius: 5px; font-size: 16px; cursor: pointer; width: 100%;
-        }
-        button:active { background-color: #006699; }
+        .card { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        select { width: 100%; padding: 10px; margin-top: 10px; border-radius: 5px; border: 1px solid #ccc; display: none; }
+        
+        #lista-resumo { text-align: left; font-size: 14px; color: #555; margin: 15px 0; }
+        .item-lesao { background: #ffe6e6; padding: 5px 10px; border-radius: 5px; margin-bottom: 5px; border-left: 4px solid #ff4d4d; }
+        
+        button { background: #0088cc; color: white; border: none; padding: 15px; border-radius: 8px; width: 100%; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h3>Selecione as áreas com lesão</h3>
-        
-        <svg id="human-body" viewBox="0 0 200 500">
-            <circle id="Cabeça" class="membro" cx="100" cy="40" r="30" />
-            <rect id="Tronco" class="membro" x="60" y="80" width="80" height="150" rx="10" />
-            <rect id="Braço_Esquerdo" class="membro" x="20" y="85" width="30" height="130" rx="15" />
-            <rect id="Braço_Direito" class="membro" x="150" y="85" width="30" height="130" rx="15" />
-            <rect id="Perna_Esquerda" class="membro" x="65" y="240" width="30" height="160" rx="15" />
-            <rect id="Perna_Direita" class="membro" x="105" y="240" width="30" height="160" rx="15" />
-        </svg>
 
-        <div id="lista-lesoes"><strong>Lesões:</strong> <span id="texto-lesoes">Nenhuma</span></div>
-        <button onclick="enviarDados()">Confirmar e Enviar</button>
-    </div>
+<div class="card">
+    <h3>Local e Tipo da Lesão</h3>
+    <p style="font-size: 12px; color: #666;">Clique na parte do corpo e selecione o tipo:</p>
+    
+    <svg id="human-body" viewBox="0 0 200 500">
+        <circle id="Cabeça" class="membro" cx="100" cy="40" r="30" />
+        <rect id="Tronco" class="membro" x="60" y="80" width="80" height="150" rx="10" />
+        <rect id="Braço_Esquerdo" class="membro" x="20" y="85" width="30" height="130" rx="15" />
+        <rect id="Braço_Direito" class="membro" x="150" y="85" width="30" height="130" rx="15" />
+        <rect id="Perna_Esquerda" class="membro" x="65" y="240" width="30" height="160" rx="15" />
+        <rect id="Perna_Direita" class="membro" x="105" y="240" width="30" height="160" rx="15" />
+    </svg>
 
-    <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand(); // Abre a WebApp em tela cheia
+    <select id="tipo-lesao">
+        <option value="">-- Selecione o tipo de lesão --</option>
+        <option value="Escoriação">Escoriação</option>
+        <option value="Fratura Exposta">Fratura Exposta</option>
+        <option value="Fratura Suspeita">Fratura Suspeita</option>
+        <option value="Corte/Laceração">Corte/Laceração</option>
+        <option value="Contusão">Contusão</option>
+        <option value="Queimadura">Queimadura</option>
+        <option value="Dor Local">Apenas Dor</option>
+    </select>
+</div>
 
-        const selecionados = new Set();
-        const membros = document.querySelectorAll('.membro');
-        const displayTexto = document.getElementById('texto-lesoes');
+<div class="card">
+    <strong>Resumo do Relatório:</strong>
+    <div id="lista-resumo">Nenhuma lesão marcada.</div>
+    <button onclick="enviarParaBot()">FINALIZAR RELATÓRIO</button>
+</div>
 
-        membros.forEach(membro => {
-            membro.addEventListener('click', () => {
-                const id = membro.id.replace('_', ' ');
-                if (selecionados.has(id)) {
-                    selecionados.delete(id);
-                    membro.classList.remove('selecionado');
-                } else {
-                    selecionados.add(id);
-                    membro.classList.add('selecionado');
-                }
-                atualizarTexto();
-            });
+<script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+
+    let membroAtual = null;
+    const lesoes = {}; // Armazena { "Cabeça": "Escoriação" }
+
+    const menuTipo = document.getElementById('tipo-lesao');
+    const resumoDiv = document.getElementById('lista-resumo');
+
+    // Clique no mapa
+    document.querySelectorAll('.membro').forEach(el => {
+        el.addEventListener('click', () => {
+            membroAtual = el.id.replace('_', ' ');
+            menuTipo.style.display = 'block';
+            menuTipo.focus();
+            // Destaca visualmente qual estamos editando
+            document.querySelectorAll('.membro').forEach(m => m.style.stroke = '#fff');
+            el.style.stroke = '#0088cc';
         });
+    });
 
-        function atualizarTexto() {
-            displayTexto.innerText = selecionados.size > 0 ? Array.from(selecionados).join(', ') : 'Nenhuma';
+    // Quando seleciona o tipo no menu
+    menuTipo.addEventListener('change', () => {
+        if (menuTipo.value !== "" && membroAtual) {
+            lesoes[membroAtual] = menuTipo.value;
+            document.getElementById(membroAtual.replace(' ', '_')).classList.add('selecionado');
+            atualizarResumo();
+            menuTipo.value = "";
+            menuTipo.style.display = 'none';
+        }
+    });
+
+    function atualizarResumo() {
+        resumoDiv.innerHTML = "";
+        for (const [local, tipo] of Object.entries(lesoes)) {
+            resumoDiv.innerHTML += `<div class="item-lesao"><b>${local}:</b> ${tipo}</div>`;
+        }
+    }
+
+    function enviarParaBot() {
+        const total = Object.keys(lesoes).length;
+        if (total === 0) {
+            alert("Por favor, marque ao menos uma lesão.");
+            return;
         }
 
-        function enviarDados() {
-            if (selecionados.size === 0) {
-                alert("Selecione ao menos uma área.");
-                return;
-            }
-            const resultado = "Lesões identificadas em: " + Array.from(selecionados).join(', ');
-            tg.sendData(resultado); // Envia o texto de volta para o Python
+        let textoFinal = "Relatório de Lesões:\n";
+        for (const [local, tipo] of Object.entries(lesoes)) {
+            textoFinal += `- ${local}: ${tipo}\n`;
         }
-    </script>
+
+        tg.sendData(textoFinal);
+    }
+</script>
+
 </body>
-</html>i
+</html>
