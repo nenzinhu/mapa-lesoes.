@@ -24,21 +24,30 @@ body {
 }
 
 #membro-body {
-  width: 100%;
-  max-width: 280px;
-  height: 420px;
+  position: relative;
+  width: 280px;
+  height: 560px;
   margin: auto;
+  background: url("pessoa.png") no-repeat center;
+  background-size: contain;
 }
 
+/* áreas invisíveis de referência */
 .membro {
-  fill: #d1d1d1;
-  stroke: #fff;
-  stroke-width: 2;
-  cursor: pointer;
+  position: absolute;
+  cursor: crosshair;
 }
 
-.selecionado {
-  fill: #ff4d4d !important;
+/* ponto vermelho preciso */
+.marcador {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background: red;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  box-shadow: 0 0 4px rgba(0,0,0,0.4);
 }
 
 select, textarea, button {
@@ -54,17 +63,39 @@ select, textarea, button {
 <div class="card">
   <h3>Local da lesão</h3>
 
-  <svg id="membro-body" viewBox="0 0 200 500">
-    <circle id="Cabeça" class="membro" cx="100" cy="40" r="30"/>
-    <rect id="Tronco" class="membro" x="60" y="80" width="80" height="150"/>
-    <rect id="Braço_Esquerdo" class="membro" x="20" y="85" width="30" height="130"/>
-    <rect id="Braço_Direito" class="membro" x="150" y="85" width="30" height="130"/>
-    <rect id="Perna_Esquerda" class="membro" x="65" y="240" width="30" height="160"/>
-    <rect id="Perna_Direita" class="membro" x="105" y="240" width="30" height="160"/>
-  </svg>
+  <div id="membro-body">
+
+    <div id="Cabeça" class="membro"
+      style="top:20px; left:95px; width:90px; height:90px;"></div>
+
+    <div id="Tronco" class="membro"
+      style="top:120px; left:80px; width:120px; height:170px;"></div>
+
+    <div id="Costas" class="membro"
+      style="top:140px; left:85px; width:110px; height:190px;"></div>
+
+    <div id="Braço_Esquerdo" class="membro"
+      style="top:135px; left:30px; width:50px; height:180px;"></div>
+
+    <div id="Braço_Direito" class="membro"
+      style="top:135px; left:200px; width:50px; height:180px;"></div>
+
+    <div id="Perna_Esquerda" class="membro"
+      style="top:310px; left:90px; width:50px; height:210px;"></div>
+
+    <div id="Perna_Direita" class="membro"
+      style="top:310px; left:140px; width:50px; height:210px;"></div>
+
+    <div id="Pé_Esquerdo" class="membro"
+      style="top:525px; left:85px; width:50px; height:30px;"></div>
+
+    <div id="Pé_Direito" class="membro"
+      style="top:525px; left:140px; width:50px; height:30px;"></div>
+
+  </div>
 
   <select id="tipo-lesao">
-    <option value="">Selecione o tipo</option>
+    <option value="">Selecione o tipo da lesão</option>
     <option value="Escoriação">Escoriação</option>
     <option value="Corte/Laceração">Corte / Laceração</option>
     <option value="Contusão">Contusão</option>
@@ -83,74 +114,79 @@ select, textarea, button {
 const tg = window.Telegram.WebApp;
 tg.expand();
 
-let membroAtual = null;
-const lesoes = {};
-
+const corpo = document.getElementById('membro-body');
 const menuTipo = document.getElementById('tipo-lesao');
 const textoRelato = document.getElementById('texto-relato');
 
-// Clique no corpo
+let membroAtual = null;
+let marcadorAtual = null;
+const lesoes = [];
+
+// CLIQUE → JÁ FICA VERMELHO
 document.querySelectorAll('.membro').forEach(el => {
-  el.addEventListener('click', () => {
+  el.addEventListener('click', (e) => {
+    e.stopPropagation();
+
     membroAtual = el.id.replace('_', ' ');
-    menuTipo.style.display = 'block';
+
+    const rect = corpo.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const marcador = document.createElement('div');
+    marcador.className = 'marcador';
+    marcador.style.left = x + 'px';
+    marcador.style.top = y + 'px';
+    corpo.appendChild(marcador);
+
+    marcadorAtual = marcador;
+    menuTipo.value = '';
   });
 });
 
-// Seleção do tipo
+// DEPOIS SELECIONA O TIPO
 menuTipo.addEventListener('change', () => {
-  if (menuTipo.value && membroAtual) {
-    lesoes[membroAtual] = menuTipo.value;
-    document.getElementById(membroAtual.replace(' ','_')).classList.add('selecionado');
-    gerarTextoRelato();
-    menuTipo.value = '';
-  }
+  if (!menuTipo.value || !membroAtual || !marcadorAtual) return;
+
+  lesoes.push({
+    local: membroAtual,
+    tipo: menuTipo.value
+  });
+
+  gerarTextoRelato();
+
+  marcadorAtual = null;
+  menuTipo.value = '';
 });
 
-// TEXTO FINAL POLICIAL
+// TEXTO DO RELATO
 function gerarTextoRelato() {
-  let frases = [];
-
   const locais = {
     'Cabeça': 'na região da cabeça',
     'Tronco': 'na região do tronco',
+    'Costas': 'na região das costas',
     'Braço Esquerdo': 'no braço esquerdo',
     'Braço Direito': 'no braço direito',
     'Perna Esquerda': 'na perna esquerda',
-    'Perna Direita': 'na perna direita'
+    'Perna Direita': 'na perna direita',
+    'Pé Esquerdo': 'no pé esquerdo',
+    'Pé Direito': 'no pé direito'
   };
 
-  for (const [local, tipo] of Object.entries(lesoes)) {
-    const regiao = locais[local];
-
-    switch (tipo) {
-
-      case 'Escoriação':
-        frases.push(`apresentava escoriações aparentes ${regiao}.`);
-        break;
-
-      case 'Corte/Laceração':
-        frases.push(`apresentava lesão aparente ${regiao}, com sangramento visível.`);
-        break;
-
-      case 'Contusão':
-        frases.push(`apresentava lesão aparente ${regiao}.`);
-        break;
-
-      case 'Fratura Suspeita':
-        frases.push(`relatava fortes dores ${regiao}, não sendo possível precisar a gravidade da lesão.`);
-        break;
-
-      case 'Dor Local':
-        frases.push(`relatava sentir dores ${regiao}.`);
-        break;
+  const frases = lesoes.map(l => {
+    const r = locais[l.local];
+    switch (l.tipo) {
+      case 'Escoriação': return `apresentava escoriações aparentes ${r}.`;
+      case 'Corte/Laceração': return `apresentava lesão aparente ${r}, com sangramento visível.`;
+      case 'Contusão': return `apresentava lesão aparente ${r}.`;
+      case 'Fratura Suspeita': return `relatava fortes dores ${r}, não sendo possível precisar a gravidade da lesão.`;
+      case 'Dor Local': return `relatava sentir dores ${r}.`;
     }
-  }
+  });
 
-  textoRelato.value =
-    frases.length > 0
-      ? `Durante atendimento no local, foi possível observar que a vítima ${frases.join(' ')}`
-      : '';
+  textoRelato.value = frases.length
+    ? `Durante atendimento no local, foi possível observar que a vítima ${frases.join(' ')}`
+    : '';
 }
 
 function copiarRelato() {
@@ -162,4 +198,3 @@ function copiarRelato() {
 
 </body>
 </html>
-
