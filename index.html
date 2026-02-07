@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa de Lesões - SINISTRO-PMRV198</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { font-family: sans-serif; text-align: center; background-color: #f4f4f4; color: #333; }
+        .container { padding: 20px; }
+        #human-body { width: 100%; max-width: 300px; height: auto; margin: 20px auto; }
+        .membro { fill: #cccccc; stroke: #ffffff; stroke-width: 2; cursor: pointer; transition: 0.3s; }
+        .membro:hover { fill: #999999; }
+        .selecionado { fill: #ff4d4d !important; } /* Cor de destaque para lesão */
+        
+        #lista-lesoes { margin: 20px; text-align: left; background: white; padding: 10px; border-radius: 8px; min-height: 50px; }
+        button { 
+            background-color: #0088cc; color: white; border: none; padding: 15px 30px; 
+            border-radius: 5px; font-size: 16px; cursor: pointer; width: 100%;
+        }
+        button:active { background-color: #006699; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h3>Selecione as áreas com lesão</h3>
+        
+        <svg id="human-body" viewBox="0 0 200 500">
+            <circle id="Cabeça" class="membro" cx="100" cy="40" r="30" />
+            <rect id="Tronco" class="membro" x="60" y="80" width="80" height="150" rx="10" />
+            <rect id="Braço_Esquerdo" class="membro" x="20" y="85" width="30" height="130" rx="15" />
+            <rect id="Braço_Direito" class="membro" x="150" y="85" width="30" height="130" rx="15" />
+            <rect id="Perna_Esquerda" class="membro" x="65" y="240" width="30" height="160" rx="15" />
+            <rect id="Perna_Direita" class="membro" x="105" y="240" width="30" height="160" rx="15" />
+        </svg>
+
+        <div id="lista-lesoes"><strong>Lesões:</strong> <span id="texto-lesoes">Nenhuma</span></div>
+        <button onclick="enviarDados()">Confirmar e Enviar</button>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // Abre a WebApp em tela cheia
+
+        const selecionados = new Set();
+        const membros = document.querySelectorAll('.membro');
+        const displayTexto = document.getElementById('texto-lesoes');
+
+        membros.forEach(membro => {
+            membro.addEventListener('click', () => {
+                const id = membro.id.replace('_', ' ');
+                if (selecionados.has(id)) {
+                    selecionados.delete(id);
+                    membro.classList.remove('selecionado');
+                } else {
+                    selecionados.add(id);
+                    membro.classList.add('selecionado');
+                }
+                atualizarTexto();
+            });
+        });
+
+        function atualizarTexto() {
+            displayTexto.innerText = selecionados.size > 0 ? Array.from(selecionados).join(', ') : 'Nenhuma';
+        }
+
+        function enviarDados() {
+            if (selecionados.size === 0) {
+                alert("Selecione ao menos uma área.");
+                return;
+            }
+            const resultado = "Lesões identificadas em: " + Array.from(selecionados).join(', ');
+            tg.sendData(resultado); // Envia o texto de volta para o Python
+        }
+    </script>
+</body>
+</html>i
