@@ -1,100 +1,142 @@
-<html lang="pt-br"><head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Editor de Etiquetas Arrastáveis</title>
-    <style>
-        :root { --p: #007bff; --s: #28a745; --danger: #dc3545; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; display: flex; height: 100vh; overflow: hidden; }
-        
-        /* Painel Lateral */
-        .sidebar { width: 350px; background: #fff; border-right: 1px solid #ddd; padding: 20px; display: flex; flex-direction: column; box-shadow: 2px 0 10px rgba(0,0,0,0.1); z-index: 10; }
-        .sidebar h2 { font-size: 18px; margin: 0 0 20px 0; color: #333; border-bottom: 2px solid var(--p); padding-bottom: 10px; }
-        
-        .control-group { margin-bottom: 15px; background: #f9f9f9; padding: 10px; border-radius: 8px; border: 1px solid #eee; }
-        .control-group label { display: block; font-size: 12px; font-weight: bold; color: #666; margin-bottom: 5px; }
-        
-        input[type="range"] { width: 100%; margin-bottom: 10px; cursor: pointer; }
-        input[type="number"] { width: 60px; padding: 4px; border: 1px solid #ccc; border-radius: 4px; }
-        
-        .membro-nome { font-size: 16px; color: var(--p); font-weight: bold; margin-bottom: 10px; display: block; }
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mapa de Lesões</title>
 
-        /* Área do Boneco */
-        .viewport { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #e2e8f0; position: relative; }
-        
-        #corpo-container { 
-            position: relative; 
-            width: 400px; 
-            height: 800px; 
-            background: #fff;
-            border: 2px solid #ccc;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            user-select: none;
-        }
-        
-        #body-img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; opacity: 0.7; }
+<style>
+:root{
+    --azul:#007bff;
+    --verde:#28a745;
+    --fundo:url('fundo.jpg');
+}
 
-        .membro { 
-            position: absolute; 
-            z-index: 5; 
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0, 123, 255, 0.3);
-            border: 1px solid var(--p);
-            font-size: 10px;
-            color: #000;
-            font-weight: bold;
-            cursor: move; /* Indica que é arrastável */
-            text-align: center;
-            box-sizing: border-box;
-        }
-        .membro.active { background: rgba(40, 167, 69, 0.5); border: 2px solid var(--s); z-index: 10; }
+body{
+    margin:0;
+    font-family:Segoe UI, sans-serif;
+    background:linear-gradient(rgba(255,255,255,.9),rgba(255,255,255,.9)), var(--fundo);
+    background-size:cover;
+    background-position:center;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+}
 
-        /* Botões */
-        .btn { padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        .btn-side { background: var(--p); color: white; width: 100%; }
-        .btn-copy { background: var(--s); color: white; width: 100%; margin-top: 20px; }
-        
-        #code-output { background: #222; color: #7f7; padding: 10px; font-family: monospace; font-size: 11px; border-radius: 4px; margin-top: 15px; white-space: pre-wrap; word-break: break-all; max-height: 120px; overflow-y: auto; }
-        .hint { font-size: 11px; color: #666; font-style: italic; margin-bottom: 10px; }
-    </style>
+/* TOPO */
+.topbar{
+    width:100%;
+    background:#fff;
+    padding:15px;
+    display:flex;
+    justify-content:center;
+    gap:10px;
+    flex-wrap:wrap;
+    box-shadow:0 2px 8px rgba(0,0,0,.1);
+}
+
+button{
+    padding:10px 15px;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+    font-weight:bold;
+    background:var(--azul);
+    color:#fff;
+}
+
+button:hover{opacity:.9}
+
+/* CORPO */
+#container{
+    position:relative;
+    width:400px;
+    max-width:95vw;
+    margin-top:20px;
+}
+
+#body-img{
+    width:100%;
+    display:block;
+}
+
+.membro{
+    position:absolute;
+    background:rgba(0,123,255,.25);
+    border:1px solid var(--azul);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:11px;
+    cursor:pointer;
+    transition:.2s;
+}
+
+/* TOOLTIP */
+.membro::after{
+    content:attr(data-nome);
+    position:absolute;
+    bottom:100%;
+    left:50%;
+    transform:translateX(-50%);
+    background:#000;
+    color:#fff;
+    padding:4px 6px;
+    border-radius:4px;
+    font-size:11px;
+    white-space:nowrap;
+    opacity:0;
+    pointer-events:none;
+}
+
+.membro:hover::after{
+    opacity:1;
+}
+
+/* SELECIONADO */
+.membro.selected{
+    background:rgba(40,167,69,.6);
+    border:2px solid var(--verde);
+}
+
+.membro.selected::before{
+    content:"✔";
+    position:absolute;
+    top:2px;
+    right:4px;
+    color:green;
+    font-weight:bold;
+}
+
+/* RELATÓRIO */
+#relatorio{
+    margin-top:20px;
+    width:90%;
+    max-width:500px;
+    background:#fff;
+    padding:15px;
+    border-radius:8px;
+    box-shadow:0 2px 8px rgba(0,0,0,.1);
+    display:none;
+}
+
+@media(max-width:600px){
+    #container{width:95vw}
+}
+</style>
 </head>
 <body>
 
-<div class="sidebar">
-    <h2>Design de Etiquetas</h2>
-    <p class="hint">Clique e arraste a etiqueta no corpo ou use os sliders abaixo.</p>
-    
-    <button class="btn btn-side" onclick="toggleSide()">Trocar Frente/Costas</button>
-
-    <div class="control-group" style="margin-top: 20px;">
-        <label>Membro Selecionado</label>
-        <span id="target-name" class="membro-nome">Cabeça (Nuca)</span>
-        
-        <label>Largura (Width %)</label>
-        <input type="range" id="w-range" min="1" max="50" step="0.5" oninput="updateMembro()">
-        <input type="number" id="w-num" oninput="syncInputs('w')"> %
-
-        <label style="margin-top:10px;">Altura (Height %)</label>
-        <input type="range" id="h-range" min="1" max="50" step="0.5" oninput="updateMembro()">
-        <input type="number" id="h-num" oninput="syncInputs('h')"> %
-    </div>
-
-    <div class="control-group">
-        <label>Posição Top (%)</label>
-        <input type="range" id="t-range" min="0" max="100" step="0.1" oninput="updateMembro()">
-        
-        <label>Posição Left (%)</label>
-        <input type="range" id="l-range" min="0" max="100" step="0.1" oninput="updateMembro()">
-    </div>
-
-    <label>Código Gerado:</label>
-    <div id="code-output">&lt;div class="membro costas" data-nome="Cabeça (Nuca)" style="top: 21.4%; left: 42.1%; width: 12%; height: 5%; display: flex;"&gt;Nuca&lt;/div&gt;</div>
-    
-    <button class="btn btn-copy" onclick="copyCode()">Copiar Código HTML</button>
+<div class="topbar">
+    <button onclick="toggleSide()">Trocar Frente/Costas</button>
+    <button onclick="limpar()">Limpar</button>
+    <button onclick="gerarRelatorio()">Gerar Relatório</button>
 </div>
 
-<div class="viewport">
+<div id="container">
+    <img id="body-img" src="frente.png">
+
+  <div class="viewport">
     <div id="corpo-container">
         <img id="body-img" src="tras.png" alt="Corpo Humano">
         
@@ -126,115 +168,68 @@
     </div>
 </div>
 
+
+<div id="relatorio"></div>
+
 <script>
-    let activeMembro = null;
-    let currentSide = 'frente';
-    let isDragging = false;
-    let offset = { x: 0, y: 0 };
+let currentSide="frente";
 
-    const container = document.getElementById('corpo-container');
+/* TROCAR LADO */
+function toggleSide(){
+    currentSide = currentSide==="frente"?"costas":"frente";
+    document.getElementById("body-img").src =
+        currentSide==="frente"?"frente.png":"tras.png";
 
-    // Inicializa eventos de clique e arraste
-    document.querySelectorAll('.membro').forEach(m => {
-        m.addEventListener('mousedown', startDrag);
+    document.querySelectorAll(".membro").forEach(el=>{
+        el.style.display = el.classList.contains(currentSide) ? "flex":"none";
+    });
+}
+
+/* LIMPAR */
+function limpar(){
+    document.querySelectorAll(".membro").forEach(el=>{
+        el.classList.remove("selected");
+    });
+    document.getElementById("relatorio").style.display="none";
+}
+
+/* SELEÇÃO */
+document.querySelectorAll(".membro").forEach(el=>{
+    el.addEventListener("click",function(){
+        this.classList.toggle("selected");
     });
 
-    function startDrag(e) {
-        if(activeMembro) activeMembro.classList.remove('active');
-        activeMembro = e.target;
-        activeMembro.classList.add('active');
-        isDragging = true;
+    el.addEventListener("touchstart",function(e){
+        e.preventDefault();
+        this.classList.toggle("selected");
+    });
+});
 
-        // Calcula posição do clique dentro do membro para não "pular" pro centro
-        const rect = activeMembro.getBoundingClientRect();
-        offset.x = e.clientX - rect.left;
-        offset.y = e.clientY - rect.top;
-
-        // Preencher barra lateral
-        updateSidebarInputs();
-        updateCodeOutput();
+/* GERAR RELATÓRIO */
+function gerarRelatorio(){
+    const selecionados = document.querySelectorAll(".membro.selected");
+    if(selecionados.length===0){
+        alert("Nenhuma área marcada.");
+        return;
     }
 
-    window.addEventListener('mousemove', (e) => {
-        if (!isDragging || !activeMembro) return;
-
-        const containerRect = container.getBoundingClientRect();
-        
-        // Calcula nova posição em pixels
-        let newX = e.clientX - containerRect.left - offset.x;
-        let newY = e.clientY - containerRect.top - offset.y;
-
-        // Converte para porcentagem
-        let pctX = (newX / containerRect.width) * 100;
-        let pctY = (newY / containerRect.height) * 100;
-
-        // Limites (0 a 100%)
-        pctX = Math.max(0, Math.min(pctX, 100 - parseFloat(activeMembro.style.width)));
-        pctY = Math.max(0, Math.min(pctY, 100 - parseFloat(activeMembro.style.height)));
-
-        activeMembro.style.left = pctX.toFixed(1) + '%';
-        activeMembro.style.top = pctY.toFixed(1) + '%';
-
-        updateSidebarInputs();
-        updateCodeOutput();
+    let lista=[];
+    selecionados.forEach(el=>{
+        lista.push(el.dataset.nome);
     });
 
-    window.addEventListener('mouseup', () => {
-        isDragging = false;
-    });
+    const texto = `
+    <h3>Relatório de Lesões</h3>
+    <p><strong>Data:</strong> ${new Date().toLocaleDateString()}</p>
+    <p><strong>Áreas Marcadas:</strong></p>
+    <ul>${lista.map(item=>`<li>${item}</li>`).join('')}</ul>
+    `;
 
-    function updateSidebarInputs() {
-        if(!activeMembro) return;
-        document.getElementById('target-name').innerText = activeMembro.dataset.nome;
-        document.getElementById('w-range').value = parseFloat(activeMembro.style.width);
-        document.getElementById('w-num').value = parseFloat(activeMembro.style.width);
-        document.getElementById('h-range').value = parseFloat(activeMembro.style.height);
-        document.getElementById('h-num').value = parseFloat(activeMembro.style.height);
-        document.getElementById('t-range').value = parseFloat(activeMembro.style.top);
-        document.getElementById('l-range').value = parseFloat(activeMembro.style.left);
-    }
-
-    function syncInputs(type) {
-        document.getElementById(type+'-range').value = document.getElementById(type+'-num').value;
-        updateMembro();
-    }
-
-    function updateMembro() {
-        if(!activeMembro) return;
-        activeMembro.style.width = document.getElementById('w-range').value + '%';
-        activeMembro.style.height = document.getElementById('h-range').value + '%';
-        activeMembro.style.top = document.getElementById('t-range').value + '%';
-        activeMembro.style.left = document.getElementById('l-range').value + '%';
-        document.getElementById('w-num').value = document.getElementById('w-range').value;
-        document.getElementById('h-num').value = document.getElementById('h-range').value;
-        updateCodeOutput();
-    }
-
-    function updateCodeOutput() {
-        if(!activeMembro) return;
-        const style = activeMembro.getAttribute('style').replace(' display: none;', '').trim();
-        const code = `<div class="membro ${currentSide}" data-nome="${activeMembro.dataset.nome}" style="${style}">${activeMembro.innerText}</div>`;
-        document.getElementById('code-output').innerText = code;
-    }
-
-    function toggleSide() {
-        currentSide = currentSide === 'frente' ? 'costas' : 'frente';
-        document.getElementById('body-img').src = currentSide === 'frente' ? 'frente.png' : 'tras.png';
-        document.querySelectorAll('.membro').forEach(el => {
-            el.style.display = el.classList.contains(currentSide) ? 'flex' : 'none';
-        });
-        activeMembro = null;
-        document.getElementById('target-name').innerText = "Nenhum";
-    }
-
-    function copyCode() {
-        const text = document.getElementById('code-output').innerText;
-        if(text.includes('<div')) {
-            navigator.clipboard.writeText(text);
-            alert("Código copiado!");
-        }
-    }
+    const div = document.getElementById("relatorio");
+    div.innerHTML = texto;
+    div.style.display="block";
+}
 </script>
 
-
-</body></html>
+</body>
+</html>
